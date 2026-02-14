@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TUI API Viewer</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #terminal-container {
+            flex: 1;
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="terminal-container"></div>
+    <script>
+        const term = new Terminal({
+            cursorBlink: true,
+            theme: {
+                background: '#000000'
+            }
+        });
+        const fitAddon = new FitAddon.FitAddon();
+        term.loadAddon(fitAddon);
+        term.open(document.getElementById('terminal-container'));
+        fitAddon.fit();
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${protocol}//${window.location.host}`);
+
+        ws.onopen = () => {
+            term.write('\r\n\x1b[32mConnected to TUI API\x1b[0m\r\n');
+        };
+
+        ws.onmessage = (event) => {
+            term.write(event.data);
+        };
+
+        ws.onclose = () => {
+            term.write('\r\n\x1b[31mDisconnected\x1b[0m\r\n');
+        };
+
+        term.onData(data => {
+            // Demonstrate sending input via REST API instead of WebSocket
+            fetch('/api/input', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data })
+            }).catch(e => console.error('Input failed', e));
+        });
+
+        window.addEventListener('resize', () => {
+            fitAddon.fit();
+            const { cols, rows } = term;
+            fetch('/api/resize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cols, rows })
+            });
+        });
+
+        // Add a snapshot button to demonstrate GET /api/screen
+        const controlsDiv = document.createElement('div');
+        controlsDiv.style.position = 'absolute';
+        controlsDiv.style.top = '10px';
+        controlsDiv.style.right = '10px';
+        controlsDiv.style.zIndex = '1000';
+        controlsDiv.style.display = 'flex';
+        controlsDiv.style.gap = '5px';
+
+        const createBtn = (text, onClick) => {
+            const btn = document.createElement('button');
+            btn.textContent = text;
+            btn.onclick = onClick;
+            return btn;
+        };
+
+        controlsDiv.appendChild(createBtn('Snapshot', async () => {
+            try {
+                const res = await fetch('/api/screen');
+                const lines = await res.json();
+                console.log('--- Screen Snapshot ---');
+                console.log(lines.join('\n'));
+                alert('Screen snapshot logged to console!');
+            } catch (e) {
+                console.error('Snapshot failed', e);
+            }
+        }));
+
+        const sendKey = (key) => {
+            fetch('/api/key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key })
+            }).catch(e => console.error('Key failed', e));
+        };
+
+        controlsDiv.appendChild(createBtn('Up', () => sendKey('up')));
+        controlsDiv.appendChild(createBtn('Down', () => sendKey('down')));
+        controlsDiv.appendChild(createBtn('Enter', () => sendKey('enter')));
+        controlsDiv.appendChild(createBtn('Tab', () => sendKey('tab')));
+
+        document.body.appendChild(controlsDiv);
+    </script>
+</body>
+
+</html>

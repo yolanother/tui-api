@@ -1,0 +1,47 @@
+{
+  "name": "tuiapi",
+  "version": "1.0.0",
+  "description": "Wrap any TUI app in a REST API and WebSocket",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "tui-api": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc && node scripts/build.js",
+    "start": "node dist/cli.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "tui",
+    "api",
+    "terminal",
+    "websocket"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^25.2.3",
+    "@types/node-pty": "^0.13.4",
+    "@types/swagger-ui-express": "^4.1.8",
+    "@types/ws": "^8.18.0",
+    "@types/yaml": "^1.9.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "body-parser": "^2.2.2",
+    "chalk": "^5.6.2",
+    "commander": "^14.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "node-pty": "^1.1.0",
+    "swagger-ui-express": "^5.0.1",
+    "ws": "^8.19.0",
+    "xterm-headless": "^5.3.0",
+    "yaml": "^2.8.2"
+  }
+}
