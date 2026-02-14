@@ -19,6 +19,10 @@ paths:
               schema:
                 type: string
                 format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
   /api/screen:
     get:
       summary: Get current screen content

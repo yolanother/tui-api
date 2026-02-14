@@ -8,7 +8,9 @@ A powerful libraries that wraps terminal TUI applications, exposing them via a R
 - **Screen Capture**: Maintains a server-side representation of the terminal screen.
 - **REST API**:
   - `GET /api/screen`: Get the current terminal screen content.
-  - `GET /api/screenshot`: Get the current terminal screen as an SVG image.
+  - `GET /api/screenshot`: Get the current terminal screen as an image.
+    - Default: Returns `image/svg+xml`.
+    - Header `Accept: image/png`: Returns `image/png`.
   - `POST /api/input`: Send raw text to the process.
     - Body: `{ "data": "ls -la\r\n" }`
   - `POST /api/key`: Send a special key.

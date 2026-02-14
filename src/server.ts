@@ -92,36 +92,78 @@ export function setupRestEndpoints(app: express.Application, terminal: TerminalM
 
     app.get('/api/screenshot', (req, res) => {
         const lines = terminal.getScreen();
-        // Simple SVG generation
-        const lineHeight = 20;
-        const charWidth = 10; // Approximate for monospace
-        const width = 800; // default view width
-        const height = (lines.length * lineHeight) + 20;
+        const accept = req.headers['accept'] || '';
 
-        // Escape XML characters
-        const escapeXml = (unsafe: string) => unsafe.replace(/[<>&'"]/g, c => {
-            switch (c) {
-                case '<': return '&lt;';
-                case '>': return '&gt;';
-                case '&': return '&amp;';
-                case '\'': return '&apos;';
-                case '"': return '&quot;';
+        if (accept.includes('image/png')) {
+            // PNG Generation
+            try {
+                // Dynamic import for internal modules to keep them isolated if not needed?
+                // Actually they are part of the project now.
+                const { encodePNG } = require('./internal/png');
+                const { CHAR_WIDTH, CHAR_HEIGHT, drawChar } = require('./internal/simple-font');
+
+                const rows = lines.length;
+                const cols = lines.reduce((max, line) => Math.max(max, line.length), 0) || 80;
+
+                const width = cols * CHAR_WIDTH + 20; // Padding
+                const height = rows * CHAR_HEIGHT + 20;
+
+                const buffer = Buffer.alloc(width * height * 4);
+                // Fill with black (0,0,0,255)
+                for (let i = 0; i < buffer.length; i += 4) {
+                    buffer[i] = 0;
+                    buffer[i + 1] = 0;
+                    buffer[i + 2] = 0;
+                    buffer[i + 3] = 255;
+                }
+
+                lines.forEach((line, rowIdx) => {
+                    const y = rowIdx * CHAR_HEIGHT + 10;
+                    for (let colIdx = 0; colIdx < line.length; colIdx++) {
+                        const char = line[colIdx];
+                        const x = colIdx * CHAR_WIDTH + 10;
+                        drawChar(char, buffer, width, x, y, [255, 255, 255]);
+                    }
+                });
+
+                const png = encodePNG(width, height, buffer);
+                res.setHeader('Content-Type', 'image/png');
+                res.send(png);
+
+            } catch (e) {
+                console.error('PNG Generation failed:', e);
+                res.status(500).json({ error: 'PNG generation failed' });
             }
-            return c;
-        });
+        } else {
+            // SVG Generation (Default)
+            const lineHeight = 20;
+            const width = 800;
+            const height = (lines.length * lineHeight) + 20;
 
-        let svgContent = '';
-        lines.forEach((line, index) => {
-            const y = (index + 1) * lineHeight;
-            svgContent += `<text x="10" y="${y}" font-family="monospace" font-size="16" fill="white" xml:space="preserve">${escapeXml(line)}</text>\n`;
-        });
+            const escapeXml = (unsafe: string) => unsafe.replace(/[<>&'"]/g, c => {
+                switch (c) {
+                    case '<': return '&lt;';
+                    case '>': return '&gt;';
+                    case '&': return '&amp;';
+                    case '\'': return '&apos;';
+                    case '"': return '&quot;';
+                }
+                return c;
+            });
 
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" style="background-color: black;">
-            ${svgContent}
-        </svg>`;
+            let svgContent = '';
+            lines.forEach((line, index) => {
+                const y = (index + 1) * lineHeight;
+                svgContent += `<text x="10" y="${y}" font-family="monospace" font-size="16" fill="white" xml:space="preserve">${escapeXml(line)}</text>\n`;
+            });
 
-        res.setHeader('Content-Type', 'image/svg+xml');
-        res.send(svg);
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" style="background-color: black;">
+                ${svgContent}
+            </svg>`;
+
+            res.setHeader('Content-Type', 'image/svg+xml');
+            res.send(svg);
+        }
     });
 }
 

@@ -16,7 +16,9 @@ The `tui-api-wrapper` library provides a backend service that runs a TUI applica
     - **Send Special Key**: `POST /api/key` with JSON `{ "key": "arrowup" }`.
     - **Resize**: `POST /api/resize` with JSON `{ "cols": 80, "rows": 24 }`.
     - **Get Screen**: `GET /api/screen` returns JSON array of strings (lines).
-    - **Get Screenshot**: `GET /api/screenshot` returns an SVG image of the terminal.
+    - **Get Screenshot**: `GET /api/screenshot` returns an image of the terminal.
+        -   Default: Returns `image/svg+xml`.
+        -   Header `Accept: image/png`: Returns `image/png`.
 
 **Constraints & Considerations**:
 -   **Native Dependencies**: `node-pty` (used by `tui-api-wrapper`) is a native C++ module. It **cannot** run in Vercel Edge Functions or standard Serverless Functions easily without specific configuration.
