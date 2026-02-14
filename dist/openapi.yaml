@@ -4,9 +4,21 @@ info:
   description: API for controlling TUI applications
   version: 1.0.0
 servers:
-  - url: http://localhost:3000
+  - url: /
     description: Local server
 paths:
+  /api/screenshot:
+    get:
+      summary: Get current screen screenshot
+      description: Returns the current terminal screen as an SVG image.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            image/svg+xml:
+              schema:
+                type: string
+                format: binary
   /api/screen:
     get:
       summary: Get current screen content
