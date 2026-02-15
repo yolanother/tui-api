@@ -173,9 +173,11 @@ export function setupWebSocket(server: http.Server, terminal: TerminalManager) {
     wss.on('connection', (ws: WebSocket) => {
         console.log('Client connected');
 
-        // Send initial screen (optional)
-        // const screen = terminal.getScreen();
-        // ws.send(screen.join('\r\n')); // Send as initial bulk text?
+        // Replay buffered raw PTY output so the client sees the current screen state
+        const replay = terminal.getRawReplay();
+        if (replay && ws.readyState === WebSocket.OPEN) {
+            ws.send(replay);
+        }
 
         const onData = (data: string) => {
             if (ws.readyState === WebSocket.OPEN) {

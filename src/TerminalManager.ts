@@ -15,6 +15,8 @@ export interface TerminalConfig {
 export class TerminalManager extends EventEmitter {
     private ptyProcess: pty.IPty;
     private buffer: string[] = [];
+    private rawBuffer: string[] = [];
+    private static readonly RAW_BUFFER_MAX = 256; // max raw chunks to keep for replay
     private cols: number;
     private rows: number;
 
@@ -83,6 +85,7 @@ export class TerminalManager extends EventEmitter {
     private setupListeners() {
         this.ptyProcess.onData((data) => {
             this.updateBuffer(data);
+            this.pushRaw(data);
             this.emit('data', data);
         });
 
@@ -119,6 +122,20 @@ export class TerminalManager extends EventEmitter {
         if (this.buffer.length > 1000) {
             this.buffer = this.buffer.slice(this.buffer.length - 1000);
         }
+    }
+
+    private pushRaw(data: string) {
+        this.rawBuffer.push(data);
+        if (this.rawBuffer.length > TerminalManager.RAW_BUFFER_MAX) {
+            this.rawBuffer = this.rawBuffer.slice(
+                this.rawBuffer.length - TerminalManager.RAW_BUFFER_MAX
+            );
+        }
+    }
+
+    /** Return all cached raw PTY chunks for replay on new WebSocket connections. */
+    public getRawReplay(): string {
+        return this.rawBuffer.join('');
     }
 
     public write(data: string) {
